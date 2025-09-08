@@ -7,6 +7,8 @@ __pycache__/
 .env
 dataGenerator/.env
 
+dotnet/out/
+
 # Logs
 *.log
 logs/

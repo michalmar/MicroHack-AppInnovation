@@ -2,37 +2,17 @@
 
 Simple demo application that serves the generated Lego catalog, allows browsing, searching, filtering by category, viewing details, and importing additional seed data from a JSON file (idempotent insert-only for new product IDs).
 
-### Features
-- Blazor Server (.NET 8 LTS) – runs cross‑platform (Windows / Linux) with Kestrel
-- EF Core (SQL Server) with automatic schema creation on startup (`EnsureCreated`) – zero extra steps
-- Environment variable driven configuration (overrides `appsettings.json`)
-- Idempotent JSON import on every startup (always attempted; inserts only new figure IDs)
-- Local filesystem image serving via `/images/{imageFile}` endpoint
-- OpenTelemetry instrumentation (traces, metrics, logs) via standard OTEL_* environment variables only (no App Insights / vendor SDK)
+Containerization
+A multi-stage Dockerfile (`dotnet/Dockerfile`) is included for Linux builds. The Dockerfile builds the app with the .NET 8 SDK and runs it on the .NET 8 ASP.NET runtime image. It defaults to listening on port 8080.
 
-### Configuration
-Configuration sources (highest precedence last):
-1. `appsettings.json` / `appsettings.Development.json`
-2. Environment variables (override file values)
-
-Environment variables (aligns with design doc):
-
-| Variable | Purpose | Example |
-|----------|---------|---------|
-| SQL_CONNECTION_STRING | Full SQL Server connection string | `Server=.\\SQLEXPRESS;Database=LegoCatalog;TrustServerCertificate=True;Integrated Security=True` |
-| SEED_DATA_PATH | Optional path to `catalog.json` for automatic import when DB empty | `C:\\git\\MicroHack-AppInnovation\\data\\catalog.json` |
-| IMAGE_ROOT_PATH | Folder containing PNG images | `C:\\git\\MicroHack-AppInnovation\\data\\images` |
-| PERFTEST_API_KEY | API key required for `/perftest/catalog` endpoint (performance testing) | `MySecretKey123` |
-
-If `SQL_CONNECTION_STRING` is not supplied, the fallback from `appsettings.json` is used.
-
-### Observability (OpenTelemetry)
-The app is pre-instrumented with OpenTelemetry using only upstream open-source packages. Nothing is required to run locally; if you do not set any OTEL_* environment variables the exporter is effectively dormant.
-
-Packages included:
+Build (from the repository root):
+```powershell
 - OpenTelemetry (SDK + APIs)
 - OpenTelemetry.Extensions.Hosting (generic host integration)
 - Instrumentations: AspNetCore, SqlClient, HttpClient, Runtime, Process
+
+Run (PowerShell example) — maps the repo `data/` folder into the container and passes `SQL_CONNECTION_STRING` from the shell into the container:
+```powershell
 - OTLP exporter (enabled for traces/metrics/logs through a single `.UseOtlpExporter()` call)
 	- Logs also explicitly register `AddOtlpExporter()` (no vendor-specific logging package required)
 
@@ -45,6 +25,19 @@ Key optional environment variables (spec defined):
 | OTEL_EXPORTER_OTLP_ENDPOINT | Base OTLP endpoint | `http://otel-collector:4317` |
 | OTEL_EXPORTER_OTLP_PROTOCOL | `grpc` (default) or `http/protobuf` | `http/protobuf` |
 | OTEL_EXPORTER_OTLP_HEADERS | Additional headers | `authorization=Bearer abc123` |
+
+Notes:
+- The application reads configuration from `appsettings.json` and environment variables; `SQL_CONNECTION_STRING` will override the file setting when supplied.
+- `IMAGE_ROOT_PATH` should match the path inside the container where the images are mounted (example above uses `/data/images`).
+- If you run SQL Server on the host (Windows), `host.docker.internal` is the typical host DNS name from the container.
+
+Key env vars for container (summary):
+- `SQL_CONNECTION_STRING` (required unless fallback in appsettings is used)
+- `IMAGE_ROOT_PATH` (container path to mounted images)
+- `SEED_DATA_PATH` (optional seed JSON import file path)
+- `PERFTEST_API_KEY` (override default key for perf endpoint)
+
+The final image runs as non-root user `appuser`. If you need to change the listening port, set `ASPNETCORE_URLS` accordingly when running the container.
 | OTEL_EXPORTER_OTLP_TRACES_ENDPOINT | Trace-specific endpoint | `http://collector:4318/v1/traces` |
 | OTEL_EXPORTER_OTLP_METRICS_ENDPOINT | Metrics-specific endpoint | `http://collector:4318/v1/metrics` |
 | OTEL_EXPORTER_OTLP_LOGS_ENDPOINT | Logs-specific endpoint | `http://collector:4318/v1/logs` |

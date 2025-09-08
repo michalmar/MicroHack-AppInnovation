@@ -155,6 +155,9 @@
 - Added `SecurityControl=ignore` tag to per-user resource group in `baseInfra/bicep/userInfra.bicep` to satisfy security scanning exemption requirement.
 ## Implementation Log
 
+### 2025-09-05 (Containerization)
+- Added a multi-stage Linux `Dockerfile` for the Blazor Server app targeting .NET 8: SDK stage builds & publishes from `src/LegoCatalog.App/`, final stage uses `mcr.microsoft.com/dotnet/aspnet:8.0` and runs as a non-root `appuser`. App listens on `0.0.0.0:8080` by default.
+
 ### 2025-08-27
 Initial implementation of Python data generator (`main.py`):
 - Uses Azure OpenAI `AzureOpenAI` client & Responses API for structured text (categories/items) and image generation.
