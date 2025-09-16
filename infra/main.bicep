@@ -157,22 +157,22 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
       ]
     }
     template: {
-      containers: [
-        {
-          name: 'legocatalog'
-          image: '${acr.name}.azurecr.io/lego-catalog:latest'
-          resources: {
-            cpu: json(containerCpu)
-            memory: containerMemory
-          }
-          env: [
-            {
-              name: 'ConnectionStrings__DefaultConnection'
-              secretRef: 'sql-conn'
-            }
-          ]
-        }
-      ]
+      // containers: [
+      //   {
+      //     name: 'legocatalog'
+      //     image: '${acr.name}.azurecr.io/lego-catalog:latest'
+      //     resources: {
+      //       cpu: json(containerCpu)
+      //       memory: containerMemory
+      //     }
+      //     env: [
+      //       {
+      //         name: 'ConnectionStrings__DefaultConnection'
+      //         secretRef: 'sql-conn'
+      //       }
+      //     ]
+      //   }
+      // ]
       scale: {
         minReplicas: 1
         maxReplicas: 3
